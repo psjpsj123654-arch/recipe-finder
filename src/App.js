@@ -606,21 +606,23 @@ export default function App() {
 3~4가지 요리를 추천하고, matchPercent는 보유 재료 기준 정수로 계산하세요. difficulty는 반드시 "쉬움", "보통", "어려움" 중 하나로만 작성하세요.`;
 
     try {
-      const apiKey = process.env.REACT_APP_GEMINI_KEY;
+      const apiKey = process.env.REACT_APP_GROQ_KEY;
       if (!apiKey) {
         throw new Error("API 키가 설정되지 않았습니다. Vercel 환경변수를 확인해주세요.");
       }
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
-        }
-      );
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 4096,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -633,7 +635,7 @@ export default function App() {
         throw new Error(data.error.message || "API 응답 오류");
       }
 
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const text = data.choices?.[0]?.message?.content || "";
       if (!text) throw new Error("응답이 비어있습니다.");
 
       const clean = text.replace(/```json|```/g, "").trim();
